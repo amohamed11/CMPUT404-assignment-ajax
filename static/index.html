@@ -15,7 +15,7 @@
         required by applicable law or agreed to in writing, software distributed under the License is distributed on
         an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for
         the specific language governing permissions and limitations under the License. "/>
-    <script src=" json2.js">
+    <script src=" json2.js" type="application/javascript">
     </script>
 </head>
 
@@ -37,6 +37,8 @@
                         if (xhr.status == 200) {
                             //XXX: parse some JSON from the request!
                             //XXX: Pass the data to the callback!
+                            rdata = JSON.parse(xhr.responseText);
+                            callback(rdata);
                         }
                     }
                     catch (e) {
@@ -47,6 +49,10 @@
             //XXX: POST to a URL
             //XXX: set the mimetype and the accept headers!
             // Remember to use application/json !
+
+            xhr.open('POST', url);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(objects));
         }
 
 
@@ -135,6 +141,7 @@
             world[entity] = data;
             drawNextFrame(); // (but should we?)
             //XXX: Send a XHTML Request that updates the entity you just  modified!
+            sendJSONXMLHTTPRequest('/entity/' + entity, data, (d) => { });
 
         }
 
@@ -261,7 +268,10 @@
 
         function update() {
             //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
-            drawFrame();
+            sendJSONXMLHTTPRequest("/world", {}, (w) => {
+                world = w;
+                drawFrame();
+            });
         }
 
         // 30 frames per second
