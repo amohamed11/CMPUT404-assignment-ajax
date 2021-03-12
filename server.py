@@ -44,11 +44,11 @@ class Listeners:
         for k in self.listeners.keys():
             self.listeners[k] = dict()
 
-    def set_listener(self, id, data):
+    def set(self, id, data):
         self.listeners[id] = data
 
     def get(self, id):
-        return self.listeners.get(id)
+        return self.listeners[id]
 
     def all(self):
         return self.listeners
@@ -116,15 +116,9 @@ def hello():
 def update(entity):
     '''update the entities via this interface'''
     entity_json = flask_post_json()
-    if request.method == 'PUT':
-        for k, v in entity_json.items():
-            myWorld.update(entity, k, v)
-        e = myWorld.get(entity)
-        return jsonify(e)
-    elif request.method == 'POST':
-        myWorld.set(entity, entity_json)
-        e = myWorld.get(entity)
-        return jsonify(e)
+    myWorld.set(entity, entity_json)
+    e = myWorld.get(entity)
+    return json.dumps(e)
 
 
 @app.route("/world", methods=['POST', 'GET'])
@@ -157,7 +151,7 @@ def clear():
 @app.route("/world/listeners/<listener>", methods=['GET'])
 def get_listener(listener):
     l = myWorld.listeners.get(listener)
-    myWorld.listeners.set_listener(listener, dict())
+    myWorld.listeners.set(listener, dict())
     return jsonify(l)
 
 
