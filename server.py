@@ -21,7 +21,7 @@
 #     pip install flask
 
 
-from flask import Flask, request, send_from_directory, make_response
+from flask import Flask, request, make_response, jsonify, redirect
 import json
 app = Flask(__name__)
 app.debug = True
@@ -31,6 +31,24 @@ app.debug = True
 #    'a':{'x':1, 'y':2},
 #    'b':{'x':2, 'y':3}
 # }
+
+# class Listeners:
+#     def __init__(self):
+#         self.listeners = dict()
+
+#     def add(self, id, world):
+#         self.listeners[id] = world
+
+#     def clear(self):
+#         for k in self.listeners.keys():
+#             self.listeners[k] = dict()
+
+#     def get(self, id):
+#         return self.listeners[id]
+
+#     def notify_all(self, entity, data):
+#         for k in self.listeners.keys():
+#             self.listeners[k][entity] = data
 
 
 class World:
@@ -78,42 +96,49 @@ def flask_post_json():
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return make_response(send_from_directory('static', 'index.html'), 200)
+    return redirect('static/index.html', code=302)
 
 
 @app.route("/entity/<entity>", methods=['POST', 'PUT'])
 def update(entity):
     '''update the entities via this interface'''
+    entity_json = flask_post_json()
     if request.method == 'PUT':
-        entity_json = flask_post_json()
         for k, v in entity_json.items():
             myWorld.update(entity, k, v)
-        myWorld.set(entity, entity_json)
-        return make_response(myWorld.get(entity), 200)
+        e = myWorld.get(entity)
+        return jsonify(e)
     elif request.method == 'POST':
-        entity_json = flask_post_json()
         myWorld.set(entity, entity_json)
-        return make_response(json.dumps(myWorld.get(entity)), 201)
+        e = myWorld.get(entity)
+        return jsonify(e)
 
 
 @app.route("/world", methods=['POST', 'GET'])
 def world():
     '''you should probably return the world here'''
-    return make_response(json.dumps(myWorld.world()), 200)
+    if request.method == 'GET':
+        return jsonify(myWorld.world())
+    elif request.method == 'POST':
+        world_json = flask_post_json()
+        myWorld.clear()
+        for k, v in world_json.items():
+            myWorld.set(k, v)
+        return jsonify(myWorld.world())
 
 
 @app.route("/entity/<entity>")
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    if request.method == 'GET':
-        return make_response(json.dumps(myWorld.get(entity)), 200)
+    e = myWorld.get(entity)
+    return jsonify(e)
 
 
 @app.route("/clear", methods=['POST', 'GET'])
 def clear():
     '''Clear the world out!'''
     myWorld.clear()
-    return make_response("", 200)
+    return jsonify(dict())
 
 
 if __name__ == "__main__":
