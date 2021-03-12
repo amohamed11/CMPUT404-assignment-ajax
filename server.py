@@ -32,39 +32,52 @@ app.debug = True
 #    'b':{'x':2, 'y':3}
 # }
 
-# class Listeners:
-#     def __init__(self):
-#         self.listeners = dict()
 
-#     def add(self, id, world):
-#         self.listeners[id] = world
+class Listeners:
+    def __init__(self):
+        self.listeners = dict()
 
-#     def clear(self):
-#         for k in self.listeners.keys():
-#             self.listeners[k] = dict()
+    def add(self, id, data):
+        self.listeners[id] = data
 
-#     def get(self, id):
-#         return self.listeners[id]
+    def clear(self):
+        for k in self.listeners.keys():
+            self.listeners[k] = dict()
 
-#     def notify_all(self, entity, data):
-#         for k in self.listeners.keys():
-#             self.listeners[k][entity] = data
+    def set_listener(self, id, data):
+        self.listeners[id] = data
+
+    def get(self, id):
+        return self.listeners.get(id)
+
+    def all(self):
+        return self.listeners
+
+    def notify_all(self, entity, data):
+        for k in self.listeners.keys():
+            self.listeners[k][entity] = data
 
 
 class World:
+    listeners = Listeners()
+
     def __init__(self):
         self.clear()
+        self.listeners = Listeners()
 
     def update(self, entity, key, value):
         entry = self.space.get(entity, dict())
         entry[key] = value
         self.space[entity] = entry
+        self.listeners.notify_all(entity, entry)
 
     def set(self, entity, data):
         self.space[entity] = data
+        self.listeners.notify_all(entity, data)
 
     def clear(self):
         self.space = dict()
+        self.listeners.clear()
 
     def get(self, entity):
         return self.space.get(entity, dict())
@@ -139,6 +152,21 @@ def clear():
     '''Clear the world out!'''
     myWorld.clear()
     return jsonify(dict())
+
+
+@app.route("/world/listeners/<listener>", methods=['GET'])
+def get_listener(listener):
+    l = myWorld.listeners.get(listener)
+    myWorld.listeners.set_listener(listener, dict())
+    return jsonify(l)
+
+
+@app.route("/world/listeners", methods=['POST'])
+def add_listener():
+    listener = flask_post_json()
+    myWorld.listeners.add(listener, myWorld.world())
+    l = myWorld.listeners.get(listener)
+    return jsonify(l)
 
 
 if __name__ == "__main__":

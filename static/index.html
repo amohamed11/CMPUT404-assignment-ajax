@@ -22,11 +22,13 @@
 <body bgcolor="black" height="100%" width="100%">
     <canvas id="c" width="100%" height="100%" style="-webkit-tap-highlight-color: transparent;"></canvas>
     <script>
+        var id = "L" + Math.floor(20000000 * Math.random());
         var canvas = document.getElementById('c');
         var host = window.location.host;
         var context = canvas.getContext("2d");
         var W = canvas.width = window.innerWidth - 6;
         var H = canvas.height = window.innerHeight - 50;
+        var world = {};
 
 
         function sendJSONXMLHTTPRequest(url, objects, callback) {
@@ -58,8 +60,13 @@
             xhr.send(JSON.stringify(objects["body"]));
         }
 
+        sendJSONXMLHTTPRequest("/world", { "method": "GET", "body": null }, (w) => {
+            world = w;
+            drawFrame();
+        });
 
-        world = {};
+        // register listener using random id
+        sendJSONXMLHTTPRequest('/world/listeners', { "method": 'POST', 'body': id }, () => { });
 
         //XXX: TODO Make this prettier!
         function drawCircle(context, entity) {
@@ -271,10 +278,13 @@
 
         function update() {
             //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
-            sendJSONXMLHTTPRequest("/world", { "method": "GET", "body": null }, (w) => {
-                world = w;
+            sendJSONXMLHTTPRequest("/world/listeners/" + id.toString(), { "method": "GET", "body": null }, (updates) => {
+                for (e in updates) {
+                    world[e] = updates[e];
+                };
                 drawFrame();
             });
+
         }
 
         // 30 frames per second
